@@ -1,0 +1,69 @@
+@layout.app({ title: 'Dashboard Admin' })
+@slot('main')
+<div class="max-w-7xl mx-auto py-2">
+  <h1 class="text-2xl font-bold mb-6">📊 Dashboard Admin</h1>
+
+  <!-- Statistik Cards -->
+  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-10">
+    <div class="bg-blue-100 p-4 rounded-lg shadow">
+      <div class="text-xl font-bold">{{ totalBuku }}</div>
+      <div class="text-sm text-gray-600">Total Buku</div>
+    </div>
+    <div class="bg-green-100 p-4 rounded-lg shadow">
+      <div class="text-xl font-bold">{{ totalAnggota }}</div>
+      <div class="text-sm text-gray-600">Total Anggota</div>
+    </div>
+    <div class="bg-yellow-100 p-4 rounded-lg shadow">
+      <div class="text-xl font-bold">{{ totalDipinjam }}</div>
+      <div class="text-sm text-gray-600">Buku Dipinjam</div>
+    </div>
+    <div class="bg-purple-100 p-4 rounded-lg shadow">
+      <div class="text-xl font-bold">{{ totalKategori }}</div>
+      <div class="text-sm text-gray-600">Kategori</div>
+    </div>
+  </div>
+
+  <!-- Tabel Peminjaman Terbaru -->
+  <div class="bg-white p-4 rounded shadow mb-10">
+    <h2 class="text-lg font-semibold mb-4">🕐 Peminjaman Terbaru</h2>
+    <div class="overflow-x-auto">
+      <table class="w-full text-sm text-left text-gray-500">
+        <thead class="text-xs text-gray-700 uppercase bg-gray-50">
+          <tr>
+            <th class="px-4 py-3">#</th>
+            <th class="px-4 py-3">Anggota</th>
+            <th class="px-4 py-3">Buku</th>
+            <th class="px-4 py-3">Tanggal Pinjam</th>
+            <th class="px-4 py-3">Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          @each(p in peminjamanTerbaru)
+            <tr class="bg-white border-b hover:bg-gray-50">
+              <td class="px-4 py-2">{{ p.id }}</td>
+              <td class="px-4 py-2">{{ p.anggota.nama }}</td>
+              <td class="px-4 py-2">{{ p.buku.judul }}</td>
+              <td class="px-4 py-2">{{ p.tanggal_pinjam?.toFormat('dd/MM/yyyy') }}</td>
+              <td class="px-4 py-2">
+                @if (!p.tanggalKembali)
+                  <span class="text-red-600 font-medium">Belum Kembali</span>
+                @else
+                  <span class="text-green-600">Sudah</span>
+                @endif
+              </td>
+            </tr>
+          @endeach
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Tombol Aksi -->
+  <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+    <a href="/buku" class="bg-blue-600 text-white text-center py-3 rounded hover:bg-blue-700">📚 Kelola Buku</a>
+    <a href="/anggota" class="bg-green-600 text-white text-center py-3 rounded hover:bg-green-700">👥 Kelola Anggota</a>
+    <a href="/peminjaman" class="bg-indigo-600 text-white text-center py-3 rounded hover:bg-indigo-700">📖 Kelola Peminjaman</a>
+  </div>
+</div>
+@endslot
+@end

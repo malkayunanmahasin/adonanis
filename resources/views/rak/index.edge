@@ -1,0 +1,188 @@
+@layout.app({ title: 'Data Rak' })
+  @slot('main')
+    <div class="max-w-3xl mx-auto py-12">
+      <div class="bg-white shadow-lg rounded-xl p-6">
+        <div class="flex items-center justify-between mb-6">
+          <h1 class="text-2xl font-bold text-gray-800">🗂️ Data Rak</h1>
+          <button onclick="openFormModal()" class="text-white bg-blue-600 hover:bg-blue-700 font-medium rounded-lg text-sm px-4 py-2">
+            + Tambah Rak
+          </button>
+        </div>
+        <div id="alertBox" class="hidden mb-4 p-4 text-sm rounded-lg" role="alert"></div>
+        <div class="relative overflow-x-auto shadow-md sm:rounded-lg">
+          <table class="w-full text-sm text-left text-gray-500">
+            <thead class="text-xs text-gray-700 uppercase bg-gray-50">
+              <tr>
+                <th class="px-6 py-3">#</th>
+                <th class="px-6 py-3">Kode Rak</th>
+                <th class="px-6 py-3">Lokasi</th>
+                <th class="px-6 py-3 text-right">Aksi</th>
+              </tr>
+            </thead>
+            <tbody id="rakTbody">
+              @each(rak in raks)
+                <tr id="row-{{ rak.id }}" class="bg-white border-b hover:bg-gray-50">
+                  <td class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap">{{ rak.id }}</td>
+                  <td class="px-6 py-4">{{ rak.kodeRak }}</td>
+                  <td class="px-6 py-4">{{ rak.lokasi }}</td>
+                  <td class="px-6 py-4 text-right space-x-2">
+                    <button onclick="openFormModal({{ rak.id }}, '{{ rak.kodeRak }}', '{{ rak.lokasi }}')" class="font-medium text-blue-600 hover:underline">Edit</button>
+                    <button onclick="openDeleteModal({{ rak.id }}, '{{ rak.kodeRak }}')" class="font-medium text-red-600 hover:underline">Hapus</button>
+                  </td>
+                </tr>
+              @endeach
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal Form Tambah/Edit -->
+    <div id="formModal" class="fixed inset-0 flex items-center justify-center bg-black bg-opacity-40 z-50 hidden">
+      <div class="bg-white rounded-lg shadow-lg p-8 w-full max-w-md relative">
+        <button onclick="closeFormModal()" class="absolute top-2 right-2 text-gray-400 hover:text-gray-600">&times;</button>
+        <h2 id="formTitle" class="text-lg font-bold mb-4"></h2>
+        <form id="rakForm" autocomplete="off">
+          <input type="hidden" name="id" id="formId">
+          <div class="mb-4">
+            <label class="block mb-2 text-sm font-medium text-gray-700">Kode Rak</label>
+            <input type="text" name="kodeRak" id="formKode" required class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg block w-full p-2.5">
+          </div>
+          <div class="mb-4">
+            <label class="block mb-2 text-sm font-medium text-gray-700">Lokasi</label>
+            <input type="text" name="lokasi" id="formLokasi" required class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg block w-full p-2.5">
+          </div>
+          <div class="flex justify-end space-x-2">
+            <button type="button" onclick="closeFormModal()" class="px-4 py-2 rounded bg-gray-200 hover:bg-gray-300">Batal</button>
+            <button type="submit" class="px-4 py-2 rounded bg-blue-600 text-white hover:bg-blue-700" id="formSubmitBtn"></button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Modal Konfirmasi Hapus -->
+    <div id="deleteModal" class="fixed inset-0 flex items-center justify-center bg-black bg-opacity-40 z-50 hidden">
+      <div class="bg-white rounded-lg shadow-lg p-8 w-full max-w-sm relative">
+        <button onclick="closeDeleteModal()" class="absolute top-2 right-2 text-gray-400 hover:text-gray-600">&times;</button>
+        <h2 class="text-lg font-bold mb-4">Konfirmasi Hapus</h2>
+        <p class="mb-6">Yakin ingin menghapus rak <span id="deleteKode" class="font-semibold"></span>?</p>
+        <div class="flex justify-end space-x-2">
+          <button onclick="closeDeleteModal()" class="px-4 py-2 rounded bg-gray-200 hover:bg-gray-300">Batal</button>
+          <button onclick="submitDelete()" class="px-4 py-2 rounded bg-red-600 text-white hover:bg-red-700">Hapus</button>
+        </div>
+      </div>
+    </div>
+  @endslot
+
+  @slot('script')
+    <script>
+      let editingId = null
+      let deletingId = null
+
+      function openFormModal(id = null, kode = '', lokasi = '') {
+        document.getElementById('formModal').classList.remove('hidden')
+        document.getElementById('formId').value = id || ''
+        document.getElementById('formKode').value = kode || ''
+        document.getElementById('formLokasi').value = lokasi || ''
+        document.getElementById('formTitle').innerText = id ? 'Edit Rak' : 'Tambah Rak'
+        document.getElementById('formSubmitBtn').innerText = id ? 'Update' : 'Simpan'
+        editingId = id
+      }
+
+      function closeFormModal() {
+        document.getElementById('formModal').classList.add('hidden')
+        document.getElementById('rakForm').reset()
+        editingId = null
+      }
+
+      function openDeleteModal(id, kode) {
+        document.getElementById('deleteModal').classList.remove('hidden')
+        document.getElementById('deleteKode').innerText = kode
+        deletingId = id
+      }
+
+      function closeDeleteModal() {
+        document.getElementById('deleteModal').classList.add('hidden')
+        deletingId = null
+      }
+
+      document.getElementById('rakForm').onsubmit = async function(e) {
+        e.preventDefault()
+        const id = document.getElementById('formId').value
+        const kode = document.getElementById('formKode').value
+        const lokasi = document.getElementById('formLokasi').value
+        const url = id ? `/rak/${id}?_method=PUT` : '/rak'
+
+        const res = await fetch(url, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest',
+            'X-CSRF-TOKEN': '{{ csrfToken }}'
+          },
+          body: JSON.stringify({ kode_rak: kode, lokasi })
+        })
+        const data = await res.json()
+        if (res.ok) {
+          showAlert(data.message, true)
+          if (id) {
+            const row = document.getElementById('row-' + id)
+            row.children[1].innerText = kode
+            row.children[2].innerText = lokasi
+          } else {
+            addRakRow(data.rak)
+          }
+          closeFormModal()
+        } else {
+          showAlert(data.message || 'Gagal menyimpan!', false)
+        }
+      }
+
+      async function submitDelete() {
+        if (!deletingId) return
+        const url = `/rak/${deletingId}?_method=DELETE`
+        const res = await fetch(url, {
+          method: 'POST',
+          headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+            'X-CSRF-TOKEN': '{{ csrfToken }}'
+          }
+        })
+        const data = await res.json()
+        if (res.ok) {
+          showAlert(data.message, true)
+          const row = document.getElementById('row-' + deletingId)
+          if (row) row.remove()
+          closeDeleteModal()
+        } else {
+          showAlert(data.message || 'Gagal menghapus rak!', false)
+        }
+      }
+
+      function addRakRow(rak) {
+        const tbody = document.getElementById('rakTbody')
+        const tr = document.createElement('tr')
+        tr.id = 'row-' + rak.id
+        tr.className = 'bg-white border-b hover:bg-gray-50'
+        tr.innerHTML = `
+          <td class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap">${rak.id}</td>
+          <td class="px-6 py-4">${rak.kodeRak}</td>
+          <td class="px-6 py-4">${rak.lokasi}</td>
+          <td class="px-6 py-4 text-right space-x-2">
+            <button onclick="openFormModal(${rak.id}, '${rak.kodeRak.replace(/'/g, "\\'")}', '${rak.lokasi.replace(/'/g, "\\'")}')" class="font-medium text-blue-600 hover:underline">Edit</button>
+            <button onclick="openDeleteModal(${rak.id}, '${rak.kodeRak.replace(/'/g, "\\'")}')" class="font-medium text-red-600 hover:underline">Hapus</button>
+          </td>
+        `
+        tbody.appendChild(tr)
+      }
+
+      function showAlert(msg, success = true) {
+        const box = document.getElementById('alertBox')
+        box.innerText = msg
+        box.className = `mb-4 p-4 text-sm rounded-lg ${success ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`
+        box.classList.remove('hidden')
+        setTimeout(() => box.classList.add('hidden'), 2500)
+      }
+    </script>
+  @endslot
+@end

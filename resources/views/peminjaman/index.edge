@@ -1,0 +1,171 @@
+@layout.app({ title: 'Data Peminjaman' })
+@slot('main')
+  <div class="max-w-6xl mx-auto py-6">
+    <div class="bg-white shadow-lg rounded-xl p-6">
+      <div class="flex items-center justify-between mb-6">
+        <h1 class="text-2xl font-bold text-gray-800">📖 Data Peminjaman</h1>
+        <div class="flex items-center">
+          <span class="text-sm text-gray-600 mr-2">Total Buku Dipinjam:</span>
+          <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-blue-100 text-blue-800">
+            {{ sedangDipinjam }} Buku
+          </span>
+        </div>
+      </div>
+      <div id="alertBox" class="hidden mb-4 p-4 text-sm rounded-lg" role="alert"></div>
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm text-left text-gray-500">
+          <thead class="text-xs text-gray-700 uppercase bg-gray-50">
+            <tr>
+              <th class="px-4 py-3">#</th>
+              <th class="px-4 py-3">Anggota</th>
+              <th class="px-4 py-3">Buku</th>
+              <th class="px-4 py-3">Tanggal Pinjam</th>
+              <th class="px-4 py-3">Tanggal Kembali</th>
+              <th class="px-4 py-3 text-right">Aksi</th>
+            </tr>
+          </thead>
+          <tbody>
+            @each(p in peminjamans)
+              <tr id="row-{{ p.id }}" class="bg-white border-b hover:bg-gray-50">
+                <td class="px-4 py-3 font-medium text-gray-900">{{ p.id }}</td>
+                <td class="px-4 py-3">{{ p.anggota.nama }}</td>
+                <td class="px-4 py-3">{{ p.buku.judul }}</td>
+                <td class="px-4 py-3">{{ p.tanggal_pinjam?.toFormat('dd/MM/yyyy') }}</td>
+                <td class="px-4 py-3">
+                  @if (!p.tanggal_kembali)
+                    <span class="text-red-500 font-semibold">Belum Kembali</span>
+                  @else
+                    {{ p.tanggal_kembali.toFormat('dd/MM/yyyy') }}
+                  @endif
+                </td>
+                <td class="px-4 py-3 text-right">
+                  <div class="flex justify-end gap-2">
+                    @if (!p.tanggal_kembali)
+                      <button
+                        onclick="kembalikan({{ p.id }})"
+                        class="inline-flex items-center px-3 py-1 bg-green-100 text-green-700 rounded hover:bg-green-200 transition font-semibold text-xs"
+                        title="Kembalikan"
+                      >
+                        <span class="mr-1">🔄</span> Kembalikan
+                      </button>
+                    @endif
+                    <button
+                      onclick="hapusPeminjaman({{ p.id }})"
+                      class="inline-flex items-center px-3 py-1 bg-red-100 text-red-700 rounded hover:bg-red-200 transition font-semibold text-xs"
+                      title="Hapus"
+                    >
+                      <span class="mr-1">🗑️</span> Hapus
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            @endeach
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- FAB -->
+    <button id="fabTambah" onclick="openFormModal()" class="fixed bottom-8 right-8 z-50 bg-blue-600 hover:bg-blue-700 text-white rounded-full w-16 h-16 flex items-center justify-center shadow-lg text-3xl">
+      +
+    </button>
+
+    <!-- Modal Form Tambah Peminjaman -->
+    <div id="formModal" class="fixed inset-0 flex items-center justify-center bg-black bg-opacity-40 z-50 hidden">
+      <div class="bg-white rounded-lg shadow-lg p-8 w-full max-w-md relative">
+        <button onclick="closeFormModal()" class="absolute top-2 right-2 text-gray-400 hover:text-gray-600 text-2xl">&times;</button>
+        <h2 class="text-lg font-semibold mb-4">Tambah Peminjaman</h2>
+        <form id="formTambah">
+          <div class="mb-4">
+            <label class="block mb-1 text-sm">Anggota</label>
+            <select id="formAnggota" name="anggotaId" class="w-full border rounded p-2" required>
+              <option value="">- Pilih -</option>
+              @each(a in anggotas)
+                <option value="{{ a.id }}">{{ a.nama }} ({{ a.nim }})</option>
+              @endeach
+            </select>
+          </div>
+          <div class="mb-4">
+            <label class="block mb-1 text-sm">Buku</label>
+            <select id="formBuku" name="bukuId" class="w-full border rounded p-2" required>
+              <option value="">- Pilih -</option>
+              @each(b in bukus)
+                <option value="{{ b.id }}">{{ b.judul }}</option>
+              @endeach
+            </select>
+          </div>
+          <div class="mb-4">
+            <label class="block mb-1 text-sm">Tanggal Pinjam</label>
+            <input type="date" id="formTanggal" name="tanggal_pinjam" class="w-full border rounded p-2" required>
+          </div>
+          <div class="flex justify-end">
+            <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">Simpan</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+@endslot
+
+@slot('script')
+<script>
+  // Modal logic
+  function openFormModal() {
+    document.getElementById('formModal').classList.remove('hidden')
+  }
+  function closeFormModal() {
+    document.getElementById('formModal').classList.add('hidden')
+    document.getElementById('formTambah').reset()
+  }
+
+  const showAlert = (msg, success = true) => {
+    const box = document.getElementById('alertBox')
+    box.innerText = msg
+    box.className = `mb-4 p-4 text-sm rounded-lg ${success ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`
+    box.classList.remove('hidden')
+    setTimeout(() => box.classList.add('hidden'), 3000)
+  }
+
+  document.getElementById('formTambah').onsubmit = async (e) => {
+    e.preventDefault()
+    const data = {
+      anggotaId: document.getElementById('formAnggota').value,
+      bukuId: document.getElementById('formBuku').value,
+      tanggal_pinjam: document.getElementById('formTanggal').value
+    }
+    const res = await fetch('/peminjaman', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRF-TOKEN': '{{ csrfToken }}'
+      },
+      body: JSON.stringify(data)
+    })
+    const result = await res.json()
+    if (res.ok) location.reload()
+    else showAlert(result.message || 'Terjadi kesalahan', false)
+  }
+
+  async function hapusPeminjaman(id) {
+    if (!confirm('Yakin ingin menghapus data ini?')) return
+    const res = await fetch(`/peminjaman/${id}?_method=DELETE`, {
+      method: 'POST',
+      headers: { 'X-CSRF-TOKEN': '{{ csrfToken }}' }
+    })
+    const result = await res.json()
+    if (res.ok) location.reload()
+    else showAlert(result.message || 'Gagal menghapus', false)
+  }
+
+  async function kembalikan(id) {
+    const res = await fetch(`/peminjaman/${id}/return`, {
+      method: 'POST',
+      headers: { 'X-CSRF-TOKEN': '{{ csrfToken }}' }
+    })
+    const result = await res.json()
+    if (res.ok) location.reload()
+    else showAlert(result.message || 'Gagal mengembalikan buku', false)
+  }
+</script>
+@endslot
+@end

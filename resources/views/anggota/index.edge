@@ -1,0 +1,180 @@
+@layout.app({ title: 'Data Anggota' })
+@slot('main')
+<div class="max-w-4xl mx-auto py-12">
+  <div class="bg-white shadow-lg rounded-xl p-6">
+    <div class="flex items-center justify-between mb-6">
+      <h1 class="text-2xl font-bold text-gray-800">👥 Data Anggota</h1>
+      <button onclick="openFormModal()" class="text-white bg-blue-600 hover:bg-blue-700 font-medium rounded-lg text-sm px-4 py-2">
+        + Tambah Anggota
+      </button>
+    </div>
+    <div id="alertBox" class="hidden mb-4 p-4 text-sm rounded-lg" role="alert"></div>
+    <div class="relative overflow-x-auto shadow-md sm:rounded-lg">
+      <table class="w-full text-sm text-left text-gray-500">
+        <thead class="text-xs text-gray-700 uppercase bg-gray-50">
+          <tr>
+            <th class="px-6 py-3">#</th>
+            <th class="px-6 py-3">Nama</th>
+            <th class="px-6 py-3">NIM</th>
+            <th class="px-6 py-3">Alamat</th>
+            <th class="px-6 py-3">No. HP</th>
+            <th class="px-6 py-3 text-right">Aksi</th>
+          </tr>
+        </thead>
+        <tbody id="anggotaTbody">
+          @each(anggota in anggotas)
+            <tr id="row-{{ anggota.id }}" class="bg-white border-b hover:bg-gray-50">
+              <td class="px-6 py-4 font-medium text-gray-900">{{ anggota.id }}</td>
+              <td class="px-6 py-4">{{ anggota.nama }}</td>
+              <td class="px-6 py-4">{{ anggota.nim }}</td>
+              <td class="px-6 py-4">{{ anggota.alamat }}</td>
+              <td class="px-6 py-4">{{ anggota.no_hp }}</td>
+              <td class="px-6 py-4 text-right space-x-2">
+                <button onclick="openFormModal({{ anggota.id }}, '{{ anggota.nama }}', '{{ anggota.nim }}', '{{ anggota.alamat }}', '{{ anggota.no_hp }}')" class="text-blue-600 hover:underline">Edit</button>
+                <button onclick="openDeleteModal({{ anggota.id }}, '{{ anggota.nama }}')" class="text-red-600 hover:underline">Hapus</button>
+              </td>
+            </tr>
+          @endeach
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Tambah/Edit -->
+<div id="formModal" class="fixed inset-0 flex items-center justify-center bg-black bg-opacity-40 z-50 hidden">
+  <div class="bg-white rounded-lg shadow-lg p-8 w-full max-w-md relative">
+    <button onclick="closeFormModal()" class="absolute top-2 right-2 text-gray-400 hover:text-gray-600">&times;</button>
+    <h2 id="formTitle" class="text-lg font-bold mb-4"></h2>
+    <form id="anggotaForm" autocomplete="off">
+      <input type="hidden" name="id" id="formId">
+      <div class="mb-4">
+        <label class="block mb-1 text-sm">Nama</label>
+        <input type="text" id="formNama" name="nama" class="w-full border rounded p-2" required>
+      </div>
+      <div class="mb-4">
+        <label class="block mb-1 text-sm">NIM</label>
+        <input type="text" id="formNim" name="nim" class="w-full border rounded p-2" required>
+      </div>
+      <div class="mb-4">
+        <label class="block mb-1 text-sm">Alamat</label>
+        <input type="text" id="formAlamat" name="alamat" class="w-full border rounded p-2" required>
+      </div>
+      <div class="mb-4">
+        <label class="block mb-1 text-sm">No. HP</label>
+        <input type="text" id="formNoHp" name="no_hp" class="w-full border rounded p-2" required>
+      </div>
+      <div class="flex justify-end gap-2">
+        <button type="button" onclick="closeFormModal()" class="px-4 py-2 rounded bg-gray-200">Batal</button>
+        <button type="submit" id="formSubmitBtn" class="px-4 py-2 rounded bg-blue-600 text-white">Simpan</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Modal Hapus -->
+<div id="deleteModal" class="fixed inset-0 flex items-center justify-center bg-black bg-opacity-40 z-50 hidden">
+  <div class="bg-white rounded-lg shadow-lg p-8 w-full max-w-sm relative">
+    <button onclick="closeDeleteModal()" class="absolute top-2 right-2 text-gray-400 hover:text-gray-600">&times;</button>
+    <h2 class="text-lg font-bold mb-4">Konfirmasi Hapus</h2>
+    <p class="mb-6">Yakin ingin menghapus anggota <span id="deleteNama" class="font-semibold"></span>?</p>
+    <div class="flex justify-end space-x-2">
+      <button onclick="closeDeleteModal()" class="px-4 py-2 rounded bg-gray-200">Batal</button>
+      <button onclick="submitDelete()" class="px-4 py-2 rounded bg-red-600 text-white">Hapus</button>
+    </div>
+  </div>
+</div>
+@endslot
+
+@slot('script')
+<script>
+  let editingId = null
+  let deletingId = null
+
+  function openFormModal(id = null, nama = '', nim = '', alamat = '', no_hp = '') {
+    document.getElementById('formModal').classList.remove('hidden')
+    document.getElementById('formId').value = id || ''
+    document.getElementById('formNama').value = nama
+    document.getElementById('formNim').value = nim
+    document.getElementById('formAlamat').value = alamat
+    document.getElementById('formNoHp').value = no_hp
+    document.getElementById('formTitle').innerText = id ? 'Edit Anggota' : 'Tambah Anggota'
+    document.getElementById('formSubmitBtn').innerText = id ? 'Update' : 'Simpan'
+    editingId = id
+  }
+
+  function closeFormModal() {
+    document.getElementById('formModal').classList.add('hidden')
+    document.getElementById('anggotaForm').reset()
+    editingId = null
+  }
+
+  function openDeleteModal(id, nama) {
+    document.getElementById('deleteModal').classList.remove('hidden')
+    document.getElementById('deleteNama').innerText = nama
+    deletingId = id
+  }
+
+  function closeDeleteModal() {
+    document.getElementById('deleteModal').classList.add('hidden')
+    deletingId = null
+  }
+
+  document.getElementById('anggotaForm').onsubmit = async function(e) {
+    e.preventDefault()
+    const id = document.getElementById('formId').value
+    const data = {
+      nama: document.getElementById('formNama').value,
+      nim: document.getElementById('formNim').value,
+      alamat: document.getElementById('formAlamat').value,
+      no_hp: document.getElementById('formNoHp').value,
+    }
+    const url = id ? `/anggota/${id}?_method=PUT` : '/anggota'
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Requested-With': 'XMLHttpRequest',
+        'X-CSRF-TOKEN': '{{ csrfToken }}'
+      },
+      body: JSON.stringify(data)
+    })
+    const resData = await res.json()
+    if (res.ok) {
+      showAlert(resData.message, true)
+      location.reload()
+    } else {
+      showAlert(resData.message || 'Terjadi kesalahan!', false)
+    }
+  }
+
+  async function submitDelete() {
+    if (!deletingId) return
+    const url = `/anggota/${deletingId}?_method=DELETE`
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'X-Requested-With': 'XMLHttpRequest',
+        'X-CSRF-TOKEN': '{{ csrfToken }}'
+      }
+    })
+    const data = await res.json()
+    if (res.ok) {
+      showAlert(data.message, true)
+      document.getElementById('row-' + deletingId).remove()
+      closeDeleteModal()
+    } else {
+      showAlert(data.message || 'Gagal menghapus anggota!', false)
+    }
+  }
+
+  function showAlert(msg, success = true) {
+    const box = document.getElementById('alertBox')
+    box.innerText = msg
+    box.className = `mb-4 p-4 text-sm rounded-lg ${success ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`
+    box.classList.remove('hidden')
+    setTimeout(() => box.classList.add('hidden'), 2500)
+  }
+</script>
+@endslot
+@end

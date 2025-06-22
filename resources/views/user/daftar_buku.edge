@@ -1,0 +1,63 @@
+@layout.user({ title: 'Daftar Buku' })
+
+@slot('main')
+<div class="max-w-4xl mx-auto py-8">
+  <h1 class="text-2xl font-bold mb-6">📚 Daftar Buku</h1>
+
+  <form method="GET" action="" class="mb-6 flex gap-2">
+    <input type="text" name="q" value="{{ q || '' }}" placeholder="Cari judul atau penulis..." class="border px-3 py-2 rounded w-full" />
+    <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">Cari</button>
+  </form>
+
+  <div id="alertBox" class="hidden mb-4 p-4 text-sm rounded-lg"></div>
+
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+    @each(buku in bukuList)
+      <div class="bg-white p-4 rounded shadow">
+        <h2 class="text-lg font-semibold">{{ buku.judul }}</h2>
+        <p class="text-sm text-gray-600">Penulis: {{ buku.penulis }}</p>
+        <p class="text-sm text-gray-600 mb-2">Tahun: {{ buku.tahun_terbit }}</p>
+        <form class="pinjamForm" data-id="{{ buku.id }}">
+          {{ csrfField() }}
+          <button type="submit" class="mt-2 bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
+            📥 Pinjam
+          </button>
+        </form>
+      </div>
+    @endeach
+  </div>
+</div>
+
+<script>
+document.querySelectorAll('.pinjamForm').forEach(form => {
+  form.onsubmit = async function(e) {
+    e.preventDefault()
+    const bukuId = form.getAttribute('data-id')
+    const csrf = form.querySelector('input[name="_csrf"]').value
+    const res = await fetch(`/buku-user/${bukuId}/pinjam`, {
+      method: 'POST',
+      headers: {
+        'X-Requested-With': 'XMLHttpRequest',
+        'Content-Type': 'application/json',
+        'X-CSRF-TOKEN': csrf
+      }
+    })
+    const data = await res.json()
+    showAlert(data.message, data.success)
+    if (data.success) {
+      setTimeout(() => window.location.reload(), 1200)
+    }
+  }
+})
+
+function showAlert(msg, success = true) {
+  const box = document.getElementById('alertBox')
+  box.innerText = msg
+  box.className = `mb-4 p-4 text-sm rounded-lg ${success ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`
+  box.classList.remove('hidden')
+  setTimeout(() => box.classList.add('hidden'), 2500)
+}
+</script>
+@endslot
+
+@end

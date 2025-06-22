@@ -1,0 +1,47 @@
+@layout.user({ title: 'Riwayat Peminjaman' })
+
+@slot('main')
+<div class="max-w-4xl mx-auto py-8">
+  <h1 class="text-2xl font-bold mb-6">📖 Riwayat Peminjaman</h1>
+
+  <table class="w-full bg-white shadow rounded overflow-hidden">
+    <thead class="bg-gray-100 text-left text-sm uppercase text-gray-600">
+      <tr>
+        <th class="px-4 py-3">Judul Buku</th>
+        <th class="px-4 py-3">Tanggal Pinjam</th>
+        <th class="px-4 py-3">Tanggal Kembali</th>
+        <th class="px-4 py-3">Aksi</th>
+      </tr>
+    </thead>
+    <tbody>
+      @each(p in riwayat)
+        <tr class="border-b">
+          <td class="px-4 py-2">{{ p.buku.judul }}</td>
+          <td class="px-4 py-2">{{ p.tanggal_pinjam.toFormat('dd/MM/yyyy') }}</td>
+          <td class="px-4 py-2">
+            @if (p.tanggal_kembali)
+              {{ p.tanggal_kembali.toFormat('dd/MM/yyyy') }}
+            @else
+              <span class="text-red-500">Belum</span>
+            @endif
+          </td>
+          <td class="px-4 py-2">
+            @if (!p.tanggal_kembali)
+              <form method="POST" action="/kembalikan/{{ p.id }}">
+                {{ csrfField() }}
+                <button class="text-sm bg-green-600 text-white px-3 py-1 rounded hover:bg-green-700">
+                  🔁 Kembalikan
+                </button>
+              </form>
+            @else
+              <span class="text-gray-500 text-sm">✓</span>
+            @endif
+          </td>
+        </tr>
+      @endeach
+    </tbody>
+  </table>
+</div>
+@endslot
+
+@end

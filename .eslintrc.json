@@ -1,0 +1,13 @@
+{
+  "root": true,
+  "plugins": ["prettier"],
+  "rules": {
+    "prettier/prettier": [
+      "off",
+      {
+        "printWidth": 120,
+        "proseWrap": "never"
+      }
+    ]
+  }
+}

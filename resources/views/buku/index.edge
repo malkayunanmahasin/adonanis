@@ -1,0 +1,236 @@
+@layout.app({ title: 'Data Buku' })
+  @slot('main')
+    <div class="max-w-6xl mx-auto py-12">
+      <div class="bg-white shadow-lg rounded-xl p-6">
+        <div class="flex items-center justify-between mb-6">
+          <h1 class="text-2xl font-bold text-gray-800">📚 Data Buku</h1>
+          <button onclick="openFormModal()" class="text-white bg-blue-600 hover:bg-blue-700 font-medium rounded-lg text-sm px-4 py-2">
+            + Tambah Buku
+          </button>
+        </div>
+        <div id="alertBox" class="hidden mb-4 p-4 text-sm rounded-lg" role="alert"></div>
+        <div class="relative overflow-x-auto shadow-md sm:rounded-lg">
+          <table class="w-full text-sm text-left text-gray-500">
+            <thead class="text-xs text-gray-700 uppercase bg-gray-50">
+              <tr>
+                <th class="px-6 py-3">#</th>
+                <th class="px-6 py-3">Judul</th>
+                <th class="px-6 py-3">Penulis</th>
+                <th class="px-6 py-3">Tahun</th>
+                <th class="px-6 py-3">Kategori</th>
+                <th class="px-6 py-3">Rak</th>
+                <th class="px-6 py-3 text-right">Aksi</th>
+              </tr>
+            </thead>
+            <tbody id="bukuTbody">
+              @each(buku in bukus)
+                <tr id="row-{{ buku.id }}" class="bg-white border-b hover:bg-gray-50">
+                  <td class="px-6 py-4 font-medium text-gray-900">{{ buku.id }}</td>
+                  <td class="px-6 py-4">{{ buku.judul }}</td>
+                  <td class="px-6 py-4">{{ buku.penulis }}</td>
+                  <td class="px-6 py-4">{{ buku.tahunTerbit }}</td>
+                  <td class="px-6 py-4">{{ buku.namaKategori }}</td>
+                  <td class="px-6 py-4">{{ buku.namaRak }}</td>
+                  <td class="px-6 py-4 text-right space-x-2">
+                    <button onclick="openFormModal({{ buku.id }}, '{{ buku.judul }}', '{{ buku.penulis }}', {{ buku.tahunTerbit }}, {{ buku.kategoriId }}, {{ buku.rakId }})" class="text-blue-600 hover:underline">Edit</button>
+                    <button onclick="openDeleteModal({{ buku.id }}, '{{ buku.judul }}')" class="text-red-600 hover:underline">Hapus</button>
+                  </td>
+                </tr>
+              @endeach
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal Form Tambah/Edit Buku -->
+    <div id="formModal" class="fixed inset-0 flex items-center justify-center bg-black bg-opacity-40 z-50 hidden">
+      <div class="bg-white rounded-lg shadow-lg p-8 w-full max-w-md relative">
+        <button onclick="closeFormModal()" class="absolute top-2 right-2 text-gray-400 hover:text-gray-600">&times;</button>
+        <h2 id="formTitle" class="text-lg font-bold mb-4"></h2>
+        <form id="bukuForm" autocomplete="off">
+          <input type="hidden" name="id" id="formId">
+          <div class="mb-4">
+            <label class="block mb-1 text-sm">Judul</label>
+            <input type="text" id="formJudul" name="judul" class="w-full border rounded p-2" required>
+          </div>
+          <div class="mb-4">
+            <label class="block mb-1 text-sm">Penulis</label>
+            <input type="text" id="formPenulis" name="penulis" class="w-full border rounded p-2" required>
+          </div>
+          <div class="mb-4">
+            <label class="block mb-1 text-sm">Tahun Terbit</label>
+            <input type="number" id="formTahun" name="tahun_terbit" class="w-full border rounded p-2" required>
+          </div>
+          <div class="mb-4">
+            <label class="block mb-1 text-sm">Kategori</label>
+            <select id="formKategori" name="kategori_id" class="w-full border rounded p-2" required>
+              @each(kategori in kategoris)
+                <option value="{{ kategori.id }}">{{ kategori.nama_kategori }}</option>
+              @endeach
+            </select>
+          </div>
+          <div class="mb-4">
+            <label class="block mb-1 text-sm">Rak</label>
+            <select id="formRak" name="rak_id" class="w-full border rounded p-2" required>
+              @each(rak in raks)
+                <option value="{{ rak.id }}">{{ rak.kode_rak }} - {{ rak.lokasi }}</option>
+              @endeach
+            </select>
+          </div>
+          <div class="flex justify-end gap-2">
+            <button type="button" onclick="closeFormModal()" class="px-4 py-2 rounded bg-gray-200">Batal</button>
+            <button type="submit" id="formSubmitBtn" class="px-4 py-2 rounded bg-blue-600 text-white">Simpan</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Modal Hapus Buku -->
+    <div id="deleteModal" class="fixed inset-0 flex items-center justify-center bg-black bg-opacity-40 z-50 hidden">
+      <div class="bg-white rounded-lg shadow-lg p-8 w-full max-w-sm relative">
+        <button onclick="closeDeleteModal()" class="absolute top-2 right-2 text-gray-400 hover:text-gray-600">&times;</button>
+        <h2 class="text-lg font-bold mb-4">Konfirmasi Hapus</h2>
+        <p class="mb-6">Yakin ingin menghapus buku <span id="deleteJudul" class="font-semibold"></span>?</p>
+        <div class="flex justify-end space-x-2">
+          <button onclick="closeDeleteModal()" class="px-4 py-2 rounded bg-gray-200">Batal</button>
+          <button onclick="submitDelete()" class="px-4 py-2 rounded bg-red-600 text-white">Hapus</button>
+        </div>
+      </div>
+    </div>
+  @endslot
+  
+  @slot('script')
+  <script>
+    let editingId = null
+    let deletingId = null
+
+    function openFormModal(id = null, judul = '', penulis = '', tahun = '', kategoriId = '', rakId = '') {
+        document.getElementById('formModal').classList.remove('hidden')
+        document.getElementById('formId').value = id || ''
+        document.getElementById('formJudul').value = judul || ''
+        document.getElementById('formPenulis').value = penulis || ''
+        document.getElementById('formTahun').value = tahun || ''
+        document.getElementById('formKategori').value = kategoriId || ''
+        document.getElementById('formRak').value = rakId || ''
+        document.getElementById('formTitle').innerText = id ? 'Edit Buku' : 'Tambah Buku'
+        document.getElementById('formSubmitBtn').innerText = id ? 'Update' : 'Simpan'
+        editingId = id
+    }
+
+    function closeFormModal() {
+        document.getElementById('formModal').classList.add('hidden')
+        document.getElementById('bukuForm').reset()
+        editingId = null
+    }
+
+    function openDeleteModal(id, judul) {
+        document.getElementById('deleteModal').classList.remove('hidden')
+        document.getElementById('deleteJudul').innerText = judul
+        deletingId = id
+    }
+
+    function closeDeleteModal() {
+        document.getElementById('deleteModal').classList.add('hidden')
+        deletingId = null
+    }
+
+    document.getElementById('bukuForm').onsubmit = async function(e) {
+        e.preventDefault()
+        const id = document.getElementById('formId').value
+        const data = {
+        judul: document.getElementById('formJudul').value,
+        penulis: document.getElementById('formPenulis').value,
+        tahunTerbit: Number(document.getElementById('formTahun').value),
+        kategoriId: Number(document.getElementById('formKategori').value),
+        rakId: Number(document.getElementById('formRak').value)
+        }
+        const url = id ? `/buku/${id}?_method=PUT` : '/buku'
+        const res = await fetch(url, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest',
+            'X-CSRF-TOKEN': '{{ csrfToken }}'
+        },
+        body: JSON.stringify(data)
+        })
+        const resData = await res.json()
+        if (res.ok) {
+        showAlert(resData.message, true)
+        if (id) {
+            const row = document.getElementById('row-' + id)
+            row.children[1].innerText = data.judul
+            row.children[2].innerText = data.penulis
+            row.children[3].innerText = data.tahunTerbit
+            row.children[4].innerText = kategoriNamaById(data.kategoriId)
+            row.children[5].innerText = rakNamaById(data.rakId)
+        } else {
+            addBukuRow(resData.buku)
+        }
+        closeFormModal()
+        } else {
+        showAlert(resData.message || 'Terjadi kesalahan!', false)
+        }
+    }
+
+    async function submitDelete() {
+        if (!deletingId) return
+        const url = `/buku/${deletingId}?_method=DELETE`
+        const res = await fetch(url, {
+        method: 'POST',
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+            'X-CSRF-TOKEN': '{{ csrfToken }}'
+        }
+        })
+        const data = await res.json()
+        if (res.ok) {
+        showAlert(data.message, true)
+        document.getElementById('row-' + deletingId).remove()
+        closeDeleteModal()
+        } else {
+        showAlert(data.message || 'Gagal menghapus buku!', false)
+        }
+    }
+
+    function addBukuRow(buku) {
+        const tbody = document.getElementById('bukuTbody')
+        const tr = document.createElement('tr')
+        tr.id = 'row-' + buku.id
+        tr.className = 'bg-white border-b hover:bg-gray-50'
+        tr.innerHTML = `
+        <td class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap">${buku.id}</td>
+        <td class="px-6 py-4">${buku.judul}</td>
+        <td class="px-6 py-4">${buku.penulis}</td>
+        <td class="px-6 py-4">${buku.tahunTerbit}</td>
+        <td class="px-6 py-4">${kategoriNamaById(buku.kategoriId)}</td>
+        <td class="px-6 py-4">${rakNamaById(buku.rakId)}</td>
+        <td class="px-6 py-4 text-right space-x-2">
+            <button onclick="openFormModal(${buku.id}, '${buku.judul}', '${buku.penulis}', ${buku.tahunTerbit}, ${buku.kategoriId}, ${buku.rakId})" class="font-medium text-blue-600 hover:underline">Edit</button>
+            <button onclick="openDeleteModal(${buku.id}, '${buku.judul}')" class="font-medium text-red-600 hover:underline">Hapus</button>
+        </td>
+        `
+        tbody.appendChild(tr)
+    }
+
+    function showAlert(msg, success = true) {
+        const box = document.getElementById('alertBox')
+        box.innerText = msg
+        box.className = `mb-4 p-4 text-sm rounded-lg ${success ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`
+        box.classList.remove('hidden')
+        setTimeout(() => box.classList.add('hidden'), 2500)
+    }
+
+    function kategoriNamaById(id) {
+        const opt = document.querySelector(`#formKategori option[value='${id}']`)
+        return opt ? opt.textContent : '-'
+    }
+
+    function rakNamaById(id) {
+        const opt = document.querySelector(`#formRak option[value='${id}']`)
+        return opt ? opt.textContent : '-'
+    }
+  </script>
+  @endslot
+@end
